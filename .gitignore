@@ -9,6 +9,7 @@ __pycache__/
 *.class
 *.ipr
 *.iws
+*.npy
 Testing.txt
 run_game.bat
 run_game.sh
@@ -23,3 +24,7 @@ hlt/player.py
 hlt/positionals.py
 halite.exe
 replays/README.md
+HAL_III-2.py
+play_games.py
+logs
+run_game - Copy.bat
