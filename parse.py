@@ -6,11 +6,14 @@ import os.path
 import zstd
 import numpy as np
 import time
+import glob
 
 import hlt
 from hlt.entity import Shipyard, Dropoff, Ship
 from hlt.game_map import MapCell, GameMap
 from hlt.constants import *
+
+MAX_HALITE = 1000
 
 ARBITRARY_ID = -1
 
@@ -110,27 +113,25 @@ def surrounding_ocean(ship, data_frame, area):
     gameMap = data_frame[0]
     ship_keys = list(data_frame[2].keys())
     friendly_ships = data_frame[2]
-    structure_keys = list(data_frame[4].keys())
     friendly_structures = list(data_frame[4])
     enemy_ship_keys = list(data_frame[3].keys())
     enemy_ship_data = data_frame[3]
-    enemy_struct_keys = list(data_frame[5].keys())
     enemy_struc_data = data_frame[5]
     
     enemy_ships = []
     for i in enemy_ship_keys:
-        enemy_ships.append(enemy_ship_data[i])
+        enemy_ships.append(enemy_ship_data[i].position)
     enemy_structures = []
-    for i in enemy_struct_keys:
-        enemy_structures.append(enemy_struc_data[i])
+    for i in enemy_struc_data:
+        enemy_structures.append(i.position)
     
     all_ships = []
     for i in ship_keys:
-        all_ships.append(friendly_ships[1].position)
+        all_ships.append(friendly_ships[i].position)
     
     all_structures = []
-    for i in structure_keys:
-        all_structures.append(friendly_structures[i].position)
+    for i in friendly_structures:
+        all_structures.append(i.position)
     
     map_box = [] # converted "map cell" positions
     for yval in range(-1 * area, area + 1):
@@ -195,20 +196,29 @@ def convert_moves(ship, ships):
     return ship_move
 
 if __name__ == "__main__":
-
-    folder_name = "replay_data"
+    area = 16
+    os.chdir('replay_data')
+    files_to_parse = glob.glob('*.hlt')
     
-    for file_name in sorted(os.listdir(folder_name)):
+    for file_name in files_to_parse:
+        lock_file = file_name + '.lck'
         training_data = []
-        data = parse_replay_file(os.path.join(folder_name, file_name))
+        lock_files = glob.glob('*.lck')
+        
+        if lock_file not in lock_files:
+                        
+            with open(lock_file, 'w') as f:
+                f.close
+            data = parse_replay_file(file_name)
 
-        for d in data:
-            ships = d[1]
-            if ships is not {}:
-                ship_ids = list(ships.keys())
-                for s in ship_ids:
-                    map_box = surrounding_ocean
-                    move = convert_moves(s, ships)
-                    training_data.append(map_box, move)
-                    
-        np.save(f"parsed_data/{int(time.time()*1000)}", training_data)
+            for d in data:
+                ships = d[1]
+                if ships != {}:
+                    ship_ids = list(ships.keys())
+                    for s in ship_ids:
+                        ship = d[2][s]
+                        map_box = surrounding_ocean(ship, d, area)
+                        move = convert_moves(s, ships)
+                        training_data.append([map_box, move])
+
+            np.save(f"parsed_data/{file_name.strip('.hlt')}.npy", training_data)
