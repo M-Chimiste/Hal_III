@@ -3,6 +3,7 @@ import os
 import numpy as np
 stderr = sys.stderr
 GPU_PERCENT = 0.1
+MODEL_TO_USE = "BasicCNN-1-epochs-0.001-LR-REPLAY_DATA"
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 class AI:
@@ -13,7 +14,7 @@ class AI:
             import tensorflow as tf
             self.gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=GPU_PERCENT)
             backend.set_session(tf.Session(config=tf.ConfigProto(gpu_options=self.gpu_options)))
-            self.model = load_model("BasicCNN-25-epochs-0.001-LR-STAGE1")
+            self.model = load_model(MODEL_TO_USE)
             self.model.predict(np.random.randn(1, 33, 33, 3))
             sys.stderr = stderr
 
