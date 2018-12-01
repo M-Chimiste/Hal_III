@@ -18,6 +18,8 @@ MAX_HALITE = 1000
 
 ARBITRARY_ID = -1
 
+# Function find_player_data
+# Purpose: To extract the player information for the winner of the replay match.
 def find_player_data(data):
     rank = [p for p in data['game_statistics']['player_statistics']]
     for i in rank:
@@ -28,7 +30,8 @@ def find_player_data(data):
     return int(player_id)
     
 
-
+# Function parse_replay_files
+# Purpose: To input a folder of replay files and convert them into a format necessary for feeding to a CNN.
 def parse_replay_file(file_name):
     print("Load Replay: " + file_name)
     with open(file_name, 'rb') as f:
@@ -96,6 +99,8 @@ def parse_replay_file(file_name):
     return list(zip(frames, moves, ships, other_ships, my_dropoffs, them_dropoffs))
 
 
+# Function parse_replay_folder
+# Purpose: to run through an entire directory converting the replay files.
 def parse_replay_folder(folder_name, max_files=None):
     replay_buffer = []
     for file_name in sorted(os.listdir(folder_name)):
@@ -108,6 +113,8 @@ def parse_replay_folder(folder_name, max_files=None):
     return replay_buffer
 
 
+# Function surrounding_ocean
+# Purpose: To generate a N x N box of data for each ship per each turn and save as [[game map data, ship choice]...]
 def surrounding_ocean(ship, data_frame, area):
     # Ultimate list that will house the data of positionals around a ship.  This is with the ship at origin.  Consider this a "mask."
     # Once we have the area we need to convert back to the map positionals to query status / halite amount.
@@ -179,6 +186,9 @@ def surrounding_ocean(ship, data_frame, area):
     return map_box
 
 
+# Function: convert_moves
+# Purpose: to convert the character representation of the moves from the replay files to an integer value.
+# Allows for piping into trainer and "automatically" being converted to 1 hot array for CNN.
 def convert_moves(ship, ships):
     ship_move = ships[ship]
     try:
@@ -194,6 +204,8 @@ def convert_moves(ship, ships):
             ship_move = 4
     except KeyError:
         ship_move = 4
+        #TODO: This key error is actually a result of a ship being turned into a dropoff, but I don't currently know how to make dropoffs..
+        # Currently called as a stationary position since many ships are not turned into dropoffs (usually).  Could be good future project.  Can turn 4 to 5 and adjust 1 hot array in trainer...
     return ship_move
 
 if __name__ == "__main__":
