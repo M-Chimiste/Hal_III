@@ -7,6 +7,7 @@ import zstd
 import numpy as np
 import time
 import glob
+from tqdm import tqdm
 
 import hlt
 from hlt.entity import Shipyard, Dropoff, Ship
@@ -200,7 +201,7 @@ if __name__ == "__main__":
     os.chdir('replay_data')
     files_to_parse = glob.glob('*.hlt')
     
-    for file_name in files_to_parse:
+    for file_name in tqdm(files_to_parse, desc="All Files"):
         lock_file = file_name + '.lck'
         training_data = []
         lock_files = glob.glob('*.lck')
@@ -210,8 +211,8 @@ if __name__ == "__main__":
             with open(lock_file, 'w') as f:
                 f.close
             data = parse_replay_file(file_name)
-
-            for d in data:
+            print("Starting remapping.")
+            for d in tqdm(data):
                 ships = d[1]
                 if ships != {}:
                     ship_ids = list(ships.keys())
