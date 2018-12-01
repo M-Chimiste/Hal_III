@@ -7,6 +7,7 @@ import numpy as np
 import time
 import os
 import random
+from tqdm import tqdm
 
 
 area = 33
@@ -44,8 +45,8 @@ model.compile(loss='categorical_crossentropy', optimizer=opt, metrics=['accuracy
 tensorboard = TensorBoard(log_dir=f'logs/HAL_III-{learning_rate}-{int(time.time())}')
 
 # Iterate through data
-train_directory = "training_data"
-hm_epochs = 25
+train_directory = "train_data"
+hm_epochs = 1
 def check_data():
     choices = {"move_north": move_north,
                 "move_south": move_south,
@@ -62,11 +63,11 @@ def check_data():
     print("Total data length now is: ",total_data)
     return lengths
 
-'''
+
 for i in range(hm_epochs):
     print(f"Currently on epoch {i}")
     current = 0
-    increment = 3500
+    increment = 50
     
     not_maximum = True
     all_files = os.listdir(train_directory)
@@ -86,7 +87,8 @@ for i in range(hm_epochs):
             full_path = os.path.join(train_directory,file)
             data = np.load(full_path)
             data = list(data)
-            for d in data:
+            print(f"working on {file}")
+            for d in tqdm(data):
                 choice = d[1]
                 if choice == 0:
                     converted_choice = [1,0,0,0,0]
@@ -119,30 +121,39 @@ for i in range(hm_epochs):
         stay_still = stay_still[:lowest_data]
 
         check_data()
+        print("Appending final training data set")
         training_data = move_north + move_south + move_east + move_west + stay_still
+        print("Shuffling Data")
         random.shuffle(training_data)
+        # clear up memory by removing these lists
+        move_north = None 
+        move_south = None
+        move_east = None
+        move_west = None
+        stay_still = None
+
         test_size = 128
         batch_size = 256
 
         print("reshaping x_train")
-        x_train = np.array([i[0] for i in training_data[:-test_size]]).reshape(-1, 33, 33, 3)
+        x_train = np.array([i[0] for i in tqdm(training_data[:-test_size], desc="Reshape X_train")]).reshape(-1, 33, 33, 3)
         print("reshaping y_train")
-        y_train = np.array([i[1] for i in training_data[:-test_size]])
+        y_train = np.array([i[1] for i in tqdm(training_data[:-test_size], desc='Reshape y_train')])
 
         print('reshaping x_test')
-        x_test = np.array([i[0] for i in training_data[-test_size:]]).reshape(-1, 33, 33, 3)
+        x_test = np.array([i[0] for i in tqdm(training_data[-test_size:], desc="Reshape x_test")]).reshape(-1, 33, 33, 3)
         print('reshaping y_test')
-        y_test = np.array([i[1] for i in training_data[-test_size:]])
+        y_test = np.array([i[1] for i in tqdm(training_data[-test_size:], desc="Reshape y_test")])
 
         model.fit(x_train, y_train, batch_size=batch_size, validation_data=(x_test, y_test), shuffle=True, verbose=1, callbacks=[tensorboard])
 
-        model.save(f"BasicCNN-{hm_epochs}-epochs-{learning_rate}-LR-STAGE1")
+        model.save(f"BasicCNN-{hm_epochs}-epochs-{learning_rate}-LR-REPLAY_DATA")
         current += increment
         if current >= maximum:
             not_maximum = False
+
+
 '''
-
-
 all_files = os.listdir(train_directory)
 random.shuffle(all_files)
 
@@ -212,4 +223,4 @@ y_test = np.array([i[1] for i in training_data[-test_size:]])
 model.fit(x_train, y_train, batch_size=batch_size, epochs=hm_epochs, validation_data=(x_test, y_test), shuffle=True, verbose=1, callbacks=[tensorboard])
 
 model.save(f"BasicCNN-{hm_epochs}-epochs-{learning_rate}-LR-STAGE1")
-        
+'''     
